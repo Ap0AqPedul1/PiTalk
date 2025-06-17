@@ -1,71 +1,49 @@
 import socket
 import pyaudio
 import threading
-import keyboard  # Untuk mendeteksi tombol spasi
+import keyboard  # pip install keyboard
 
-# Konfigurasi audio
+SERVER_IP = "129.10.10.186"  # ← Ganti dengan IP server kamu
+PORT = 5005
+
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 
-# IP server dan port
-SERVER_IP = "127.0.0.1"  # Ganti dengan IP server di jaringan lokal jika perlu
-SERVER_PORT = 5005
-
-# Buat socket UDP
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-# Inisialisasi audio
 audio = pyaudio.PyAudio()
 
-# Input dari mikrofon
-stream_in = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE,
-                       input=True, frames_per_buffer=CHUNK)
-
-# Output ke speaker
-stream_out = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE,
-                        output=True, frames_per_buffer=CHUNK)
-
-# Thread untuk mengirim audio saat PTT ditekan
-def send_audio():
-    print("🎙️ Tekan dan tahan [spasi] untuk berbicara...")
-    ptt_active = False
-    while True:
-        if keyboard.is_pressed('space'):
-            data = stream_in.read(CHUNK, exception_on_overflow=False)
-            client_socket.sendto(data, (SERVER_IP, SERVER_PORT))
-            if not ptt_active:
-                print("🎤 [PTT AKTIF] Anda sedang bicara...")
-                ptt_active = True
-        else:
-            stream_in.read(CHUNK, exception_on_overflow=False)
-            if ptt_active:
-                print("🔇 [PTT NONAKTIF] Anda berhenti bicara.")
-                ptt_active = False
-
-# Thread untuk menerima audio dari server
-def receive_audio():
+def receive_audio(sock):
+    stream = audio.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        output=True,
+                        frames_per_buffer=CHUNK)
     while True:
         try:
-            data, _ = client_socket.recvfrom(2048)
-            stream_out.write(data)
-        except:
-            break
+            data, _ = sock.recvfrom(2048)
+            stream.write(data)
+        except Exception as e:
+            print(f"[ERROR RECEIVE] {e}")
 
-# Jalankan kedua thread
-threading.Thread(target=send_audio, daemon=True).start()
-threading.Thread(target=receive_audio, daemon=True).start()
-
-# Jaga agar program tetap berjalan
-try:
+def send_audio(sock, server_address):
+    stream = audio.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        input=True,
+                        frames_per_buffer=CHUNK)
+    print("[INFO] Tekan <spasi> untuk bicara.")
     while True:
-        pass
-except KeyboardInterrupt:
-    print("❌ Client dihentikan.")
-finally:
-    stream_in.close()
-    stream_out.close()
-    audio.terminate()
-    client_socket.close()
-          
+        if keyboard.is_pressed('space'):
+            data = stream.read(CHUNK, exception_on_overflow=False)
+            sock.sendto(data, server_address)
+
+def main():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(('', 0))  # Bind ke port lokal acak agar bisa menerima audio
+
+    threading.Thread(target=receive_audio, args=(sock,), daemon=True).start()
+    send_audio(sock, (SERVER_IP, PORT))
+
+if __name__ == '__main__':
+    main()

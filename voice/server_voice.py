@@ -1,31 +1,29 @@
-# server_relay.py
 import socket
-from datetime import datetime
+import threading
 
 PORT = 5005
-BUFFER_SIZE = 2048
+clients = set()
 
-# Buat socket UDP
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-server_socket.bind(("0.0.0.0", PORT))
-   
-# Simpan alamat client
-client_addresses = set()
-
-print("🔁 Server relay siap menerima dan meneruskan audio...")
-
-try:
+def handle_receive(sock):
     while True:
-        data, addr = server_socket.recvfrom(BUFFER_SIZE)
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        print(f"[{timestamp}] 🎧 Diterima {len(data)} byte dari {addr}")
+        try:
+            data, addr = sock.recvfrom(2048)
+            if addr not in clients:
+                clients.add(addr)
+                print(f"[NEW CLIENT] {addr}")
+            # Relay ke client lain
+            for client in clients:
+                if client != addr:
+                    sock.sendto(data, client)
+            print(f"[RELAY] {len(data)} bytes dari {addr}")
+        except Exception as e:
+            print(f"[ERROR] {e}")
 
-        client_addresses.add(addr)
+def main():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(("0.0.0.0", PORT))
+    print(f"[SERVER] Menunggu audio di UDP port {PORT}...")
+    handle_receive(sock)
 
-        for client in client_addresses:
-            if client != addr:
-                server_socket.sendto(data, client)
-except KeyboardInterrupt:
-    print("❌ Server dihentikan.")
-finally:
-    server_socket.close()
+if __name__ == '__main__':
+    main()
