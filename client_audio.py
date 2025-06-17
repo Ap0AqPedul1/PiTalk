@@ -19,7 +19,7 @@ def recv_audio(sock, stream):
             break
 
 def client_program():
-    host = "127.0.0.1"
+    host = "129.10.10.206"
     port = 50007
 
     p = pyaudio.PyAudio()
