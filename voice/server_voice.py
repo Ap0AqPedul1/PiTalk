@@ -1,31 +1,31 @@
+# server_relay.py
 import socket
+from datetime import datetime
 
-CHUNK = 1024
-PORT = 12345
+PORT = 5005
+BUFFER_SIZE = 2048
 
-def audio_relay_server(host='0.0.0.0'):
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    server_socket.bind((host, PORT))
-    print(f"[STARTED] UDP Audio Relay Server on {host}:{PORT}")
+# Buat socket UDP
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server_socket.bind(("0.0.0.0", PORT))
+   
+# Simpan alamat client
+client_addresses = set()
 
-    clients = set()
+print("🔁 Server relay siap menerima dan meneruskan audio...")
 
+try:
     while True:
-        try:
-            data, addr = server_socket.recvfrom(CHUNK)
-            
-            if addr not in clients:
-                clients.add(addr)
-                print(f"[JOINED] {addr}")
+        data, addr = server_socket.recvfrom(BUFFER_SIZE)
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] 🎧 Diterima {len(data)} byte dari {addr}")
 
-            for client in list(clients):
-                if client != addr:
-                    try:
-                        server_socket.sendto(data, client)
-                    except:
-                        clients.remove(client)
-        except Exception as e:
-            print(f"[ERROR] {e}")
+        client_addresses.add(addr)
 
-if __name__ == "__main__":
-    audio_relay_server()
+        for client in client_addresses:
+            if client != addr:
+                server_socket.sendto(data, client)
+except KeyboardInterrupt:
+    print("❌ Server dihentikan.")
+finally:
+    server_socket.close()
