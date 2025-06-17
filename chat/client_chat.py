@@ -1,30 +1,36 @@
 import socket
 import threading
 
-SERVER_IP = '129.10.10.186'  # Ganti dengan IP server
+# --- Konfigurasi ---
+SERVER_IP = '127.0.0.1'  # Ganti dengan IP server jika perlu
 SERVER_PORT = 12345
+USERNAME = "Azhari"      # Ganti sesuai nama client
 
+# --- Setup Socket ---
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-client_socket.bind(('', 0))  # port random
+client_socket.bind(('', 0))  # port random, auto
 
+# --- Thread untuk menerima pesan dari server ---
 def listen():
     while True:
         try:
             data, addr = client_socket.recvfrom(1024)
-            print(f"\n[RELAY] {addr}: {data.decode()}")
+            print(f"\n{data.decode()}")
         except Exception as e:
             print(f"[RECEIVE ERROR] {e}")
             break
 
+# --- Jalankan Thread Penerima ---
 threading.Thread(target=listen, daemon=True).start()
 
-print("[READY] Type message (Ctrl+C to exit):")
+print(f"[{USERNAME}] READY. Ketik pesan (Ctrl+C untuk keluar):")
 while True:
     try:
         msg = input("> ")
-        client_socket.sendto(msg.encode(), (SERVER_IP, SERVER_PORT))
+        full_msg = f"[{USERNAME}] {msg}"
+        client_socket.sendto(full_msg.encode(), (SERVER_IP, SERVER_PORT))
     except KeyboardInterrupt:
-        print("\n[EXIT] Bye.")
+        print("\n[EXIT] Keluar dari chat.")
         break
     except Exception as e:
         print(f"[SEND ERROR] {e}")
