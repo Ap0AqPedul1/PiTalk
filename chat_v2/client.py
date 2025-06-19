@@ -2,7 +2,7 @@ import socket
 import threading
 import json
 
-CONTROL_SERVER_IP = '127.0.0.1'
+CONTROL_SERVER_IP = '129.10.10.186'
 CONTROL_SERVER_PORT = 8888
 
 def listen_server(sock):

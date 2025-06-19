@@ -81,15 +81,23 @@ def client_handler(conn, addr):
                     conn.sendall((json.dumps(response) + "\n").encode())
 
                 elif command == "CHAT":
-                    # Broadcast chat message ke semua client termasuk pengirim
                     from_user = user_id
                     msg = cmd.get("message", "")
+                    
+                    with lock:
+                        # Cek apakah user dalam keadaan mute
+                        if user_status.get(from_user, {}).get("mute", False):
+                            conn.sendall(b'{"error": "Kamu sedang dalam mode mute, tidak bisa mengirim pesan"}\n')
+                            continue
+
+                    # Broadcast chat message ke semua client
                     chat_data = {
                         "type": "CHAT",
                         "from": from_user,
                         "message": msg
                     }
                     broadcast(chat_data)
+
 
                 else:
                     conn.sendall(b'{"error": "command tidak dikenali"}\n')
