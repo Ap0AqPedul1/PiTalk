@@ -10,7 +10,7 @@ CONTROL_SERVER_IP = '192.168.1.111'
 CONTROL_SERVER_PORT = 8888
 
 user_addrs = {}
-user_status = {}  # user_id -> status (e.g., muted or not)
+user_status = {}  # user_id -> status (e.g., muted or active)
 lock = threading.Lock()
 
 def update_user_addrs():
@@ -38,7 +38,7 @@ def voice_server_loop():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((VOICE_SERVER_IP, VOICE_SERVER_PORT))
     print(f"Voice Server running on UDP {VOICE_SERVER_IP}:{VOICE_SERVER_PORT}")
-    
+
     while True:
         data, addr = sock.recvfrom(4096)
         with lock:
