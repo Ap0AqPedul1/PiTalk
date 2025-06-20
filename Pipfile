@@ -8,6 +8,7 @@ pyaudio = "*"
 sounddevice = "*"
 scipy = "*"
 keyboard = "*"
+websockets = "*"
 
 [dev-packages]
 

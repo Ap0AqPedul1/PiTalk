@@ -17,7 +17,7 @@ def update_user_addrs():
     global user_addrs, user_status
     while True:
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as soc
                 sock.connect((CONTROL_SERVER_IP, CONTROL_SERVER_PORT))
                 sock.sendall(b"LIST\n")
                 data = b""
