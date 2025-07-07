@@ -1,26 +1,60 @@
-# server.py
 import socket
+import sounddevice as sd
+import numpy as np
+import threading
 
-def server_program():
-    host = "127.0.0.1"  # localhost
-    port = 5000  # port bebas yang tidak dipakai
+# === KONFIGURASI ===
+# GANTI nilai-nilai ini sesuai perangkat
+PEER_IP = '192.168.1.105'
+PEER_PORT = 5002
+MY_PORT = 5001
 
-    server_socket = socket.socket()
-    server_socket.bind((host, port))
-    server_socket.listen(1)
-    print("Menunggu koneksi client...")
+SAMPLE_RATE = 44100         # 44.1 kHz (standar audio)
+CHUNK_SIZE = 1024           # jumlah frame yang dikirim per paket
+CHANNELS = 1                # mono
 
-    conn, address = server_socket.accept()
-    print(f"Terhubung dengan client {address}")
+# === SOCKET SETUP ===
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(('', MY_PORT))
 
+# === TERIMA AUDIO DARI PEER ===
+def receive_audio():
+    print(f"[LISTENING] Menunggu audio di port {MY_PORT}")
     while True:
-        data = conn.recv(1024).decode()
-        if not data:
-            break
-        print(f"Dari client: {data}")
-        data = input("Balas klient: ")
-        conn.send(data.encode())
-    conn.close()
+        try:
+            data, addr = sock.recvfrom(4096)
+            if data:
+                audio_data = np.frombuffer(data, dtype=np.int16)
+                sd.play(audio_data, samplerate=SAMPLE_RATE, blocking=False)
+        except Exception as e:
+            print("[ERROR] saat menerima:", e)
 
+# === KIRIM AUDIO KE PEER ===
+def send_audio():
+    print(f"[SENDING] Kirim audio ke {PEER_IP}:{PEER_PORT}")
+
+    def callback(indata, frames, time, status):
+        if status:
+            print("[WARN]", status)
+        try:
+            sock.sendto(indata.tobytes(), (PEER_IP, PEER_PORT))
+        except Exception as e:
+            print("[ERROR] saat mengirim:", e)
+
+    with sd.InputStream(samplerate=SAMPLE_RATE,
+                        channels=CHANNELS,
+                        dtype='int16',
+                        blocksize=CHUNK_SIZE,
+                        callback=callback):
+        print("[MIC ACTIVE] Tekan Ctrl+C untuk keluar.")
+        threading.Event().wait()
+
+# === MAIN ===
 if __name__ == '__main__':
-    server_program()
+    recv_thread = threading.Thread(target=receive_audio, daemon=True)
+    recv_thread.start()
+
+    try:
+        send_audio()
+    except KeyboardInterrupt:
+        print("\n[EXIT] Program dihentikan.")

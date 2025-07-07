@@ -3,7 +3,7 @@ import sounddevice as sd
 import threading
 import numpy as np
 
-SERVER_IP = '192.168.1.111'  # ganti dengan IP server Anda
+SERVER_IP = '192.168.1.113'  # ganti dengan IP server Anda
 SERVER_PORT = 5005
 
 SAMPLE_RATE = 44100
@@ -27,10 +27,12 @@ def receive_audio():
         while True:
             try:
                 data, _ = sock.recvfrom(4096)
-                audio = np.frombuffer(data, dtype=np.int16)
+                audio = np.frombuffer(data, dtype=np.int16).astype(np.float32) / 32768.0
                 stream.write(audio)
             except BlockingIOError:
-                pass
+                continue
+            except Exception as e:
+                print("Error receiving audio:", e)
 
 if __name__ == '__main__':
     threading.Thread(target=send_audio, daemon=True).start()

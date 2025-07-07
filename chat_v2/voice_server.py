@@ -34,10 +34,10 @@ def update_user_addrs():
             print("Error updating user_addrs:", e)
         time.sleep(5)
 
-def voice_server_loop():
+def server_loop():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((VOICE_SERVER_IP, VOICE_SERVER_PORT))
-    print(f"Voice Server running on UDP {VOICE_SERVER_IP}:{VOICE_SERVER_PORT}")
+    print(f"running on UDP {VOICE_SERVER_IP}:{VOICE_SERVER_PORT}")
     
     while True:
         data, addr = sock.recvfrom(4096)
@@ -54,4 +54,4 @@ def voice_server_loop():
 
 if __name__ == "__main__":
     threading.Thread(target=update_user_addrs, daemon=True).start()
-    voice_server_loop()
+    server_loop()

@@ -9,6 +9,8 @@ sounddevice = "*"
 scipy = "*"
 keyboard = "*"
 websockets = "*"
+opuslib = "*"
+pyogg = "*"
 
 [dev-packages]
 
