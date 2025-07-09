@@ -5,7 +5,7 @@ import numpy as np
 import json
 import time
 
-SERVER_IP = "192.168.0.106"      # IP server relay
+SERVER_IP = "192.168.0.101"      # IP server relay
 SERVER_PORT = 5005
 
 samplerate = 44100  # Hz

@@ -1,20 +1,33 @@
 #!/bin/bash
 
-# Cari card number dari USB Audio
+echo "🔍 Mendeteksi USB Sound Card..."
+
+# Ambil nomor card pertama yang mengandung kata 'usb'
 card_num=$(aplay -l | grep -i "usb" | head -n 1 | sed -n 's/card \([0-9]*\):.*/\1/p')
 
 if [ -z "$card_num" ]; then
-    echo "Perangkat USB tidak ditemukan!"
+    echo "❌ USB soundcard tidak ditemukan!"
     exit 1
 fi
 
-# Tampilkan card yang dipilih
-echo "Mengatur ~/.asoundrc ke card $card_num"
+echo "✅ Ditemukan USB soundcard di card $card_num"
 
-# Tulis ke ~/.asoundrc
+# Tulis konfigurasi ke ~/.asoundrc
+echo "⚙️  Mengatur ~/.asoundrc..."
 cat > ~/.asoundrc <<EOF
 defaults.pcm.card $card_num
 defaults.ctl.card $card_num
 EOF
 
-echo "Selesai! File ~/.asoundrc telah diperbarui."
+echo "✅ Konfigurasi ~/.asoundrc selesai."
+
+# Tes suara
+if [ -f "test.wav" ]; then
+    echo "🔊 Memutar test.wav..."
+    aplay test.wav
+else
+    echo "⚠️  test.wav tidak ditemukan. Menggunakan speaker-test sebagai alternatif."
+    speaker-test -t sine -f 440 -l 1
+fi
+
+echo "✅ Tes selesai."
