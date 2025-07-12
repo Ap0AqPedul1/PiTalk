@@ -11,6 +11,7 @@ keyboard = "*"
 websockets = "*"
 opuslib = "*"
 pyogg = "*"
+pyqt5 = "*"
 
 [dev-packages]
 

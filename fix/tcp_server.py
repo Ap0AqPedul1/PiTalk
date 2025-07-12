@@ -48,6 +48,7 @@ class TCPServer:
             self.set_client_status(client_name, "UNMUTE")
             threading.Thread(target=self.handle_client, args=(client_name,), daemon=True).start()
 
+        # server_tcp.py (modifikasi di bagian handle_client untuk menerima perintah client)
     def handle_client(self, client_name):
         client_info = self.clients[client_name]
         sock = client_info.socket
@@ -59,12 +60,40 @@ class TCPServer:
                     break
                 msg = data.decode().strip()
                 print(f"Menerima dari {client_name}: {msg}")
+
+                # Proses perintah dari client
+                if msg == "list":
+                    print("kesini??")
+                    with self.lock:
+                        if not self.clients:
+                            response = "Tidak ada client terhubung."
+                        else:
+                            # Kirim daftar client dan status
+                            response_lines = ["Daftar client dan status:"]
+                            for name, info in self.clients.items():
+                                addr = f"{info.address[0]}:{info.address[1]}"
+                                response_lines.append(f"{name} ({addr}) - {info.status}")
+                            response = "\n".join(response_lines)
+                    sock.sendall(response.encode())
+                elif msg.startswith("mute "):
+                    name = msg[5:]
+                    self.set_client_status(name, "MUTE")
+                    sock.sendall(f"Perintah mute ke {name} diproses.".encode())
+                elif msg.startswith("unmute "):
+                    name = msg[7:]
+                    self.set_client_status(name, "UNMUTE")
+                    sock.sendall(f"Perintah unmute ke {name} diproses.".encode())
+                else:
+                    # Jika bukan perintah khusus, bisa di-handle lain atau ignore
+                    sock.sendall(f"Perintah '{msg}' tidak dikenali.".encode())
+
         except ConnectionResetError:
             print(f"Connection reset by {client_name}")
         finally:
             with self.lock:
                 sock.close()
                 del self.clients[client_name]
+
 
     def command_input_loop(self):
         while True:
